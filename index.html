@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-TW"><head>
+
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>紅焰 - AI 備課自動化工作流教學簡報</title>
+<!-- Google Fonts & Material Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Noto+Sans+TC:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        google: {
+                            blue: '#1a73e8',
+                            red: '#ea4335',
+                            yellow: '#fbbc04',
+                            green: '#34a853',
+                            text: '#202124',
+                            secondary: '#5f6368',
+                            bg: '#f8f9fa'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #f8f9fa;
+            color: #202124;
+        }
+        
+        /* 簡報切換動畫 */
+        .slide {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease-in-out, transform 0.35s ease-in-out;
+            transform: translateY(12px);
+            z-index: 0;
+        }
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            z-index: 10;
+        }
+
+        /* 自訂滾動條 */
+        .slide::-webkit-scrollbar, .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .slide::-webkit-scrollbar-track, .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .slide::-webkit-scrollbar-thumb, .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .slide::-webkit-scrollbar-thumb:hover, .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* 提示詞區塊樣式 */
+        .prompt-box {
+            background: #ffffff;
+            border: 1px solid #e8eaed;
+        }
+
+        /* Toast 動畫 */
+        .toast {
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:Inter, Noto Sans TC, sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0px}.inset-x-4{left:1rem;right:1rem}.bottom-0{bottom:0px}.bottom-6{bottom:1.5rem}.left-0{left:0px}.left-1\/2{left:50%}.top-20{top:5rem}.top-auto{top:auto}.z-20{z-index:20}.z-50{z-index:50}.z-\[60\]{z-index:60}.mx-1{margin-left:0.25rem;margin-right:0.25rem}.mx-auto{margin-left:auto;margin-right:auto}.mb-0\.5{margin-bottom:0.125rem}.mb-1{margin-bottom:0.25rem}.mb-1\.5{margin-bottom:0.375rem}.mb-10{margin-bottom:2.5rem}.mb-2{margin-bottom:0.5rem}.mb-2\.5{margin-bottom:0.625rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}.ml-1{margin-left:0.25rem}.ml-2{margin-left:0.5rem}.ml-5{margin-left:1.25rem}.ml-auto{margin-left:auto}.mr-1{margin-right:0.25rem}.mr-1\.5{margin-right:0.375rem}.mr-2{margin-right:0.5rem}.mr-3{margin-right:0.75rem}.mr-3\.5{margin-right:0.875rem}.mr-4{margin-right:1rem}.mt-0\.5{margin-top:0.125rem}.mt-4{margin-top:1rem}.mt-auto{margin-top:auto}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.hidden{display:none}.h-1{height:0.25rem}.h-11{height:2.75rem}.h-12{height:3rem}.h-14{height:3.5rem}.h-16{height:4rem}.h-20{height:5rem}.h-\[380px\]{height:380px}.h-\[400px\]{height:400px}.h-\[450px\]{height:450px}.h-\[480px\]{height:480px}.h-full{height:100%}.h-screen{height:100vh}.min-h-0{min-height:0px}.min-h-full{min-height:100%}.w-11{width:2.75rem}.w-12{width:3rem}.w-14{width:3.5rem}.w-20{width:5rem}.w-full{width:100%}.w-screen{width:100vw}.max-w-2xl{max-width:42rem}.max-w-4xl{max-width:56rem}.max-w-6xl{max-width:72rem}.shrink-0{flex-shrink:0}.flex-grow{flex-grow:1}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.transform{transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.list-inside{list-style-position:inside}.list-outside{list-style-position:outside}.list-decimal{list-style-type:decimal}.list-disc{list-style-type:disc}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-center{align-items:center}.items-stretch{align-items:stretch}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}.space-x-4 > :not([hidden]) ~ :not([hidden]){--tw-space-x-reverse:0;margin-right:calc(1rem * var(--tw-space-x-reverse));margin-left:calc(1rem * calc(1 - var(--tw-space-x-reverse)))}.space-y-1\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.375rem * var(--tw-space-y-reverse))}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-y-auto{overflow-y:auto}.whitespace-pre-wrap{white-space:pre-wrap}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-xl{border-radius:0.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-t-8{border-top-width:8px}.border-amber-200{--tw-border-opacity:1;border-color:rgb(253 230 138 / var(--tw-border-opacity, 1))}.border-amber-300{--tw-border-opacity:1;border-color:rgb(252 211 77 / var(--tw-border-opacity, 1))}.border-blue-100{--tw-border-opacity:1;border-color:rgb(219 234 254 / var(--tw-border-opacity, 1))}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254 / var(--tw-border-opacity, 1))}.border-gray-100{--tw-border-opacity:1;border-color:rgb(243 244 246 / var(--tw-border-opacity, 1))}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235 / var(--tw-border-opacity, 1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219 / var(--tw-border-opacity, 1))}.border-green-100{--tw-border-opacity:1;border-color:rgb(220 252 231 / var(--tw-border-opacity, 1))}.border-green-200{--tw-border-opacity:1;border-color:rgb(187 247 208 / var(--tw-border-opacity, 1))}.border-purple-100{--tw-border-opacity:1;border-color:rgb(243 232 255 / var(--tw-border-opacity, 1))}.border-purple-200{--tw-border-opacity:1;border-color:rgb(233 213 255 / var(--tw-border-opacity, 1))}.border-red-100{--tw-border-opacity:1;border-color:rgb(254 226 226 / var(--tw-border-opacity, 1))}.border-red-200{--tw-border-opacity:1;border-color:rgb(254 202 202 / var(--tw-border-opacity, 1))}.border-white\/10{border-color:rgb(255 255 255 / 0.1)}.border-white\/15{border-color:rgb(255 255 255 / 0.15)}.border-yellow-100{--tw-border-opacity:1;border-color:rgb(254 249 195 / var(--tw-border-opacity, 1))}.border-yellow-200{--tw-border-opacity:1;border-color:rgb(254 240 138 / var(--tw-border-opacity, 1))}.border-t-google-blue{--tw-border-opacity:1;border-top-color:rgb(26 115 232 / var(--tw-border-opacity, 1))}.border-t-google-green{--tw-border-opacity:1;border-top-color:rgb(52 168 83 / var(--tw-border-opacity, 1))}.border-t-google-red{--tw-border-opacity:1;border-top-color:rgb(234 67 53 / var(--tw-border-opacity, 1))}.border-t-google-yellow{--tw-border-opacity:1;border-top-color:rgb(251 188 4 / var(--tw-border-opacity, 1))}.border-t-purple-500{--tw-border-opacity:1;border-top-color:rgb(168 85 247 / var(--tw-border-opacity, 1))}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199 / var(--tw-bg-opacity, 1))}.bg-amber-200\/60{background-color:rgb(253 230 138 / 0.6)}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235 / var(--tw-bg-opacity, 1))}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254 / var(--tw-bg-opacity, 1))}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255 / var(--tw-bg-opacity, 1))}.bg-blue-50\/70{background-color:rgb(239 246 255 / 0.7)}.bg-google-bg{--tw-bg-opacity:1;background-color:rgb(248 249 250 / var(--tw-bg-opacity, 1))}.bg-google-blue{--tw-bg-opacity:1;background-color:rgb(26 115 232 / var(--tw-bg-opacity, 1))}.bg-google-green{--tw-bg-opacity:1;background-color:rgb(52 168 83 / var(--tw-bg-opacity, 1))}.bg-google-red{--tw-bg-opacity:1;background-color:rgb(234 67 53 / var(--tw-bg-opacity, 1))}.bg-google-yellow{--tw-bg-opacity:1;background-color:rgb(251 188 4 / var(--tw-bg-opacity, 1))}.bg-gray-100{--tw-bg-opacity:1;background-color:rgb(243 244 246 / var(--tw-bg-opacity, 1))}.bg-gray-50{--tw-bg-opacity:1;background-color:rgb(249 250 251 / var(--tw-bg-opacity, 1))}.bg-gray-800{--tw-bg-opacity:1;background-color:rgb(31 41 55 / var(--tw-bg-opacity, 1))}.bg-green-100{--tw-bg-opacity:1;background-color:rgb(220 252 231 / var(--tw-bg-opacity, 1))}.bg-green-50{--tw-bg-opacity:1;background-color:rgb(240 253 244 / var(--tw-bg-opacity, 1))}.bg-green-50\/40{background-color:rgb(240 253 244 / 0.4)}.bg-green-50\/70{background-color:rgb(240 253 244 / 0.7)}.bg-purple-100{--tw-bg-opacity:1;background-color:rgb(243 232 255 / var(--tw-bg-opacity, 1))}.bg-purple-50{--tw-bg-opacity:1;background-color:rgb(250 245 255 / var(--tw-bg-opacity, 1))}.bg-purple-50\/40{background-color:rgb(250 245 255 / 0.4)}.bg-purple-50\/70{background-color:rgb(250 245 255 / 0.7)}.bg-purple-600{--tw-bg-opacity:1;background-color:rgb(147 51 234 / var(--tw-bg-opacity, 1))}.bg-red-100{--tw-bg-opacity:1;background-color:rgb(254 226 226 / var(--tw-bg-opacity, 1))}.bg-red-50{--tw-bg-opacity:1;background-color:rgb(254 242 242 / var(--tw-bg-opacity, 1))}.bg-red-50\/70{background-color:rgb(254 242 242 / 0.7)}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-white\/10{background-color:rgb(255 255 255 / 0.1)}.bg-white\/20{background-color:rgb(255 255 255 / 0.2)}.bg-white\/95{background-color:rgb(255 255 255 / 0.95)}.bg-yellow-100{--tw-bg-opacity:1;background-color:rgb(254 249 195 / var(--tw-bg-opacity, 1))}.bg-yellow-50{--tw-bg-opacity:1;background-color:rgb(254 252 232 / var(--tw-bg-opacity, 1))}.bg-yellow-50\/70{background-color:rgb(254 252 232 / 0.7)}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-slate-800{--tw-gradient-from:#1e293b var(--tw-gradient-from-position);--tw-gradient-to:rgb(30 41 59 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-slate-900{--tw-gradient-to:#0f172a var(--tw-gradient-to-position)}.p-3{padding:0.75rem}.p-3\.5{padding:0.875rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.px-1\.5{padding-left:0.375rem;padding-right:0.375rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-3\.5{padding-left:0.875rem;padding-right:0.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.px-8{padding-left:2rem;padding-right:2rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-3\.5{padding-top:0.875rem;padding-bottom:0.875rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pt-3{padding-top:0.75rem}.text-center{text-align:center}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace}.font-sans{font-family:Inter, Noto Sans TC, sans-serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-light{font-weight:300}.font-medium{font-weight:500}.font-semibold{font-weight:600}.leading-relaxed{line-height:1.625}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-0.025em}.tracking-wide{letter-spacing:0.025em}.text-amber-600{--tw-text-opacity:1;color:rgb(217 119 6 / var(--tw-text-opacity, 1))}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14 / var(--tw-text-opacity, 1))}.text-amber-900{--tw-text-opacity:1;color:rgb(120 53 15 / var(--tw-text-opacity, 1))}.text-amber-950{--tw-text-opacity:1;color:rgb(69 26 3 / var(--tw-text-opacity, 1))}.text-blue-50{--tw-text-opacity:1;color:rgb(239 246 255 / var(--tw-text-opacity, 1))}.text-blue-900{--tw-text-opacity:1;color:rgb(30 58 138 / var(--tw-text-opacity, 1))}.text-google-blue{--tw-text-opacity:1;color:rgb(26 115 232 / var(--tw-text-opacity, 1))}.text-google-green{--tw-text-opacity:1;color:rgb(52 168 83 / var(--tw-text-opacity, 1))}.text-google-red{--tw-text-opacity:1;color:rgb(234 67 53 / var(--tw-text-opacity, 1))}.text-google-secondary{--tw-text-opacity:1;color:rgb(95 99 104 / var(--tw-text-opacity, 1))}.text-google-text{--tw-text-opacity:1;color:rgb(32 33 36 / var(--tw-text-opacity, 1))}.text-google-yellow{--tw-text-opacity:1;color:rgb(251 188 4 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39 / var(--tw-text-opacity, 1))}.text-green-300{--tw-text-opacity:1;color:rgb(134 239 172 / var(--tw-text-opacity, 1))}.text-green-400{--tw-text-opacity:1;color:rgb(74 222 128 / var(--tw-text-opacity, 1))}.text-green-700{--tw-text-opacity:1;color:rgb(21 128 61 / var(--tw-text-opacity, 1))}.text-green-800{--tw-text-opacity:1;color:rgb(22 101 52 / var(--tw-text-opacity, 1))}.text-green-900{--tw-text-opacity:1;color:rgb(20 83 45 / var(--tw-text-opacity, 1))}.text-purple-300{--tw-text-opacity:1;color:rgb(216 180 254 / var(--tw-text-opacity, 1))}.text-purple-500{--tw-text-opacity:1;color:rgb(168 85 247 / var(--tw-text-opacity, 1))}.text-purple-600{--tw-text-opacity:1;color:rgb(147 51 234 / var(--tw-text-opacity, 1))}.text-purple-700{--tw-text-opacity:1;color:rgb(126 34 206 / var(--tw-text-opacity, 1))}.text-purple-900{--tw-text-opacity:1;color:rgb(88 28 135 / var(--tw-text-opacity, 1))}.text-red-300{--tw-text-opacity:1;color:rgb(252 165 165 / var(--tw-text-opacity, 1))}.text-red-800{--tw-text-opacity:1;color:rgb(153 27 27 / var(--tw-text-opacity, 1))}.text-red-900{--tw-text-opacity:1;color:rgb(127 29 29 / var(--tw-text-opacity, 1))}.text-slate-200{--tw-text-opacity:1;color:rgb(226 232 240 / var(--tw-text-opacity, 1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-yellow-300{--tw-text-opacity:1;color:rgb(253 224 71 / var(--tw-text-opacity, 1))}.text-yellow-400{--tw-text-opacity:1;color:rgb(250 204 21 / var(--tw-text-opacity, 1))}.text-yellow-600{--tw-text-opacity:1;color:rgb(202 138 4 / var(--tw-text-opacity, 1))}.text-yellow-900{--tw-text-opacity:1;color:rgb(113 63 18 / var(--tw-text-opacity, 1))}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.opacity-70{opacity:0.7}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_-4px_10px_-1px_rgba\(0\2c 0\2c 0\2c 0\.03\)\]{--tw-shadow:0 -4px 10px -1px rgba(0,0,0,0.03);--tw-shadow-colored:0 -4px 10px -1px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-inner{--tw-shadow:inset 0 2px 4px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:inset 0 2px 4px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.backdrop-blur-md{--tw-backdrop-blur:blur(12px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-300{transition-duration:300ms}.hover\:bg-blue-50:hover{--tw-bg-opacity:1;background-color:rgb(239 246 255 / var(--tw-bg-opacity, 1))}.hover\:bg-blue-600:hover{--tw-bg-opacity:1;background-color:rgb(37 99 235 / var(--tw-bg-opacity, 1))}.hover\:bg-blue-700:hover{--tw-bg-opacity:1;background-color:rgb(29 78 216 / var(--tw-bg-opacity, 1))}.hover\:bg-google-blue:hover{--tw-bg-opacity:1;background-color:rgb(26 115 232 / var(--tw-bg-opacity, 1))}.hover\:bg-google-green:hover{--tw-bg-opacity:1;background-color:rgb(52 168 83 / var(--tw-bg-opacity, 1))}.hover\:bg-google-red:hover{--tw-bg-opacity:1;background-color:rgb(234 67 53 / var(--tw-bg-opacity, 1))}.hover\:bg-gray-100:hover{--tw-bg-opacity:1;background-color:rgb(243 244 246 / var(--tw-bg-opacity, 1))}.hover\:bg-gray-50:hover{--tw-bg-opacity:1;background-color:rgb(249 250 251 / var(--tw-bg-opacity, 1))}.hover\:bg-green-700:hover{--tw-bg-opacity:1;background-color:rgb(21 128 61 / var(--tw-bg-opacity, 1))}.hover\:bg-purple-600:hover{--tw-bg-opacity:1;background-color:rgb(147 51 234 / var(--tw-bg-opacity, 1))}.hover\:bg-purple-700:hover{--tw-bg-opacity:1;background-color:rgb(126 34 206 / var(--tw-bg-opacity, 1))}.hover\:bg-red-700:hover{--tw-bg-opacity:1;background-color:rgb(185 28 28 / var(--tw-bg-opacity, 1))}.hover\:bg-yellow-500:hover{--tw-bg-opacity:1;background-color:rgb(234 179 8 / var(--tw-bg-opacity, 1))}.hover\:bg-yellow-600:hover{--tw-bg-opacity:1;background-color:rgb(202 138 4 / var(--tw-bg-opacity, 1))}.hover\:text-blue-800:hover{--tw-text-opacity:1;color:rgb(30 64 175 / var(--tw-text-opacity, 1))}.hover\:text-google-blue:hover{--tw-text-opacity:1;color:rgb(26 115 232 / var(--tw-text-opacity, 1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.hover\:shadow-md:hover{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.hover\:shadow-xl:hover{--tw-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.group:hover .group-hover\:scale-110{--tw-scale-x:1.1;--tw-scale-y:1.1;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@media (min-width: 640px){.sm\:col-span-2{grid-column:span 2 / span 2}.sm\:block{display:block}.sm\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.sm\:flex-row{flex-direction:row}.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}.sm\:text-5xl{font-size:3rem;line-height:1}.sm\:text-lg{font-size:1.125rem;line-height:1.75rem}.sm\:text-xl{font-size:1.25rem;line-height:1.75rem}}@media (min-width: 768px){.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:gap-5{gap:1.25rem}.md\:p-5{padding:1.25rem}.md\:p-6{padding:1.5rem}.md\:px-5{padding-left:1.25rem;padding-right:1.25rem}.md\:px-8{padding-left:2rem;padding-right:2rem}.md\:text-2xl{font-size:1.5rem;line-height:2rem}.md\:text-3xl{font-size:1.875rem;line-height:2.25rem}.md\:text-4xl{font-size:2.25rem;line-height:2.5rem}.md\:text-6xl{font-size:3.75rem;line-height:1}.md\:text-base{font-size:1rem;line-height:1.5rem}.md\:text-lg{font-size:1.125rem;line-height:1.75rem}.md\:text-sm{font-size:0.875rem;line-height:1.25rem}.md\:text-xl{font-size:1.25rem;line-height:1.75rem}}@media (min-width: 1024px){.lg\:relative{position:relative}.lg\:inset-x-0{left:0px;right:0px}.lg\:bottom-0{bottom:0px}.lg\:top-0{top:0px}.lg\:col-span-1{grid-column:span 1 / span 1}.lg\:hidden{display:none}.lg\:h-auto{height:auto}.lg\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.lg\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}.lg\:gap-8{gap:2rem}.lg\:shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}}</style></head>
+<body class="font-sans antialiased text-google-text h-screen w-screen flex flex-col overflow-hidden bg-google-bg">
+<!-- 頂部導航列 -->
+<nav class="shrink-0 relative w-full bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 h-14 flex items-center justify-between px-4 md:px-8">
+<div class="flex items-center text-google-blue font-bold text-base md:text-lg tracking-wide">
+<span class="material-icons-outlined mr-2 text-xl">school</span>
+            AI 備課自動化工作流
+        </div>
+<div class="text-sm font-medium text-google-secondary flex items-center gap-4">
+<span id="slide-counter">1 / 10</span>
+</div>
+<!-- 進度條 -->
+<div class="absolute bottom-0 left-0 h-1 bg-gray-100 w-full">
+<div class="h-full bg-google-blue transition-all duration-300" id="progress-bar" style="width: 10%"></div>
+</div>
+</nav>
+<!-- 簡報主容器 -->
+<main class="relative flex-grow overflow-hidden" id="presentation-container">
+<!-- ================= Slide 1: 封面 ================= -->
+<div class="slide active absolute inset-0 overflow-y-auto bg-white" id="slide-1">
+<div class="min-h-full w-full flex items-center justify-center py-8 px-4">
+<div class="max-w-4xl text-center">
+<div class="inline-flex items-center justify-center py-1.5 px-5 bg-blue-50 text-google-blue rounded-full mb-6 font-medium text-sm md:text-base">
+                        專為教育工作者設計
+                    </div>
+<h1 class="text-3xl sm:text-5xl md:text-6xl font-bold mb-6 text-google-text leading-tight tracking-tight">從發想到自動化的<br/>教學金字塔</h1>
+<p class="text-base sm:text-lg md:text-xl text-google-secondary mb-10 leading-relaxed max-w-2xl mx-auto">
+                        結合 Google 生態系的五大 AI 工具，將備課流程系統化。<br/>透過清晰的提示詞與操作步驟，打造您的專屬 AI 助教團隊。
+                    </p>
+<button class="bg-google-blue hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all inline-flex items-center mx-auto" onclick="nextSlide()">
+                        開始教學指南 <span class="material-icons-outlined ml-2 text-2xl">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- ================= Slide 2: 系統架構 ================= -->
+<div class="slide absolute inset-0 overflow-y-auto bg-google-bg" id="slide-2">
+<div class="min-h-full w-full flex items-center justify-center py-8 px-4 md:px-8">
+<div class="max-w-6xl w-full">
+<h2 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 text-center text-google-text">五大工具層次定位</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5">
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center relative overflow-hidden group hover:shadow-md transition-all">
+<div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center text-google-blue mx-auto mb-4 group-hover:scale-110 transition-transform"><span class="material-icons-outlined text-3xl">chat</span></div>
+<h3 class="text-lg font-bold mb-1 text-google-text">L1 靈感層</h3>
+<div class="text-base font-bold text-google-blue mb-3">Ask Gemini</div>
+<p class="text-sm text-gray-500 leading-relaxed">零門檻、高自由度<br/>發散思考</p>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center relative overflow-hidden group hover:shadow-md transition-all">
+<div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center text-google-red mx-auto mb-4 group-hover:scale-110 transition-transform"><span class="material-icons-outlined text-3xl">smart_toy</span></div>
+<h3 class="text-lg font-bold mb-1 text-google-text">L2 模組層</h3>
+<div class="text-base font-bold text-google-red mb-3">Gems</div>
+<p class="text-sm text-gray-500 leading-relaxed">封裝特定風格<br/>單一任務產出</p>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center relative overflow-hidden group hover:shadow-md transition-all">
+<div class="w-14 h-14 bg-yellow-50 rounded-full flex items-center justify-center text-google-yellow mx-auto mb-4 group-hover:scale-110 transition-transform"><span class="material-icons-outlined text-3xl">extension</span></div>
+<h3 class="text-lg font-bold mb-1 text-google-text">L3 擴充層</h3>
+<div class="text-base font-bold text-google-yellow mb-3">Skill</div>
+<p class="text-sm text-gray-500 leading-relaxed">邏輯運算與步驟<br/>結構化演算法</p>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center relative overflow-hidden group hover:shadow-md transition-all">
+<div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center text-google-green mx-auto mb-4 group-hover:scale-110 transition-transform"><span class="material-icons-outlined text-3xl">auto_awesome_motion</span></div>
+<h3 class="text-lg font-bold mb-1 text-google-text">L4 生產層</h3>
+<div class="text-base font-bold text-google-green mb-3">Spark (任務)</div>
+<p class="text-sm text-gray-500 leading-relaxed">文字轉為實體檔案<br/>雲端歸檔排版</p>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center relative overflow-hidden group hover:shadow-md transition-all sm:col-span-2 lg:col-span-1">
+<div class="w-14 h-14 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 mx-auto mb-4 group-hover:scale-110 transition-transform"><span class="material-icons-outlined text-3xl">account_tree</span></div>
+<h3 class="text-lg font-bold mb-1 text-google-text">L5 系統層</h3>
+<div class="text-base font-bold text-purple-600 mb-3">Workspace</div>
+<p class="text-sm text-gray-500 leading-relaxed">跨服務觸發機制<br/>全自動化流程</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ================= Slide 3: L1 Ask Gemini ================= -->
+<div class="slide absolute inset-0 overflow-y-auto" id="slide-3">
+<div class="min-h-full w-full flex items-stretch justify-center py-6 px-4 md:px-8">
+<div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 relative">
+<!-- 左欄：說明、步驟與補充連結 -->
+<div class="flex flex-col space-y-4">
+<div class="flex items-center mb-1">
+<div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-google-blue mr-4 shadow-inner shrink-0">
+<span class="material-icons-outlined text-2xl">chat</span>
+</div>
+<div>
+<h2 class="text-2xl md:text-3xl font-bold text-google-text">L1 靈感層：Ask Gemini</h2>
+<p class="text-google-secondary text-sm md:text-base mt-0.5">Chrome 內建的 AI 側邊欄助理。</p>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+<h3 class="text-lg font-bold text-google-text mb-1.5 flex items-center"><span class="material-icons-outlined text-google-blue mr-2 text-xl">my_location</span> 核心優勢</h3>
+<p class="text-sm md:text-base text-gray-700 leading-relaxed"><strong>無需手動複製貼上網頁內容</strong>，AI 即可直接讀取並處理你當前瀏覽的資訊。適合摘要、多資料統整與跨應用協作。</p>
+</div>
+<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+<h3 class="text-lg font-bold text-google-text mb-2.5 flex items-center"><span class="material-icons-outlined text-google-blue mr-2 text-xl">tips_and_updates</span> 核心技巧與操作</h3>
+<ul class="list-disc list-outside ml-5 space-y-2 text-sm md:text-base text-gray-800 leading-relaxed">
+<li><strong>單頁閱讀提問：</strong>點擊右上角圖示，直接詢問當前網頁重點。</li>
+<li><strong>跨分頁比價統整：</strong>支援同時加入最多 10 個分頁作為分析範圍。</li>
+<li><strong>快速呼叫技能：</strong>輸入 <code>/</code> 即可快速呼叫已存好的常態指令。</li>
+<li><strong>跨應用協作：</strong>直接要求 Gemini 根據網頁內容撰寫並寄送 Gmail。</li>
+<li><strong>接續舊對話：</strong>透過「更多」選單載入「近期對話」接續脈絡。</li>
+</ul>
+</div>
+<!-- 補充連結區 -->
+<div class="bg-blue-50/70 rounded-2xl p-4 border border-blue-100 mt-auto">
+<h4 class="text-sm font-bold text-blue-900 mb-2.5 flex items-center">
+<span class="material-icons-outlined text-google-blue mr-1.5 text-lg">link</span> 延伸補充資源
+                            </h4>
+<div class="flex flex-wrap gap-2">
+<a class="inline-flex items-center px-3.5 py-2 bg-white hover:bg-google-blue hover:text-white text-google-blue text-xs md:text-sm font-medium rounded-xl border border-blue-200 transition-colors shadow-sm" href="https://www.canva.com/design/DAHLmMfNN0M/DX5WxXr8ID_4GMmg6t9kiA/view?utm_content=DAHLmMfNN0M&amp;utm_campaign=designshare&amp;utm_medium=link2&amp;utm_source=uniquelinks&amp;utlId=hb34d3dd3f8#4" rel="noopener noreferrer" target="_blank">
+<span class="material-icons-outlined text-base mr-1.5">slideshow</span> 問問Gemini簡報
+                                    <span class="material-icons-outlined text-sm ml-1 opacity-70">open_in_new</span>
+</a>
+<a class="inline-flex items-center px-3.5 py-2 bg-white hover:bg-google-blue hover:text-white text-google-blue text-xs md:text-sm font-medium rounded-xl border border-blue-200 transition-colors shadow-sm" href="https://www.cna.com.tw/news/aopl/202608100206.aspx" rel="noopener noreferrer" target="_blank">
+<span class="material-icons-outlined text-base mr-1.5">newspaper</span> 新聞連結
+                                    <span class="material-icons-outlined text-sm ml-1 opacity-70">open_in_new</span>
+</a>
+<a class="inline-flex items-center px-3.5 py-2 bg-white hover:bg-google-blue hover:text-white text-google-blue text-xs md:text-sm font-medium rounded-xl border border-blue-200 transition-colors shadow-sm" href="https://sites.google.com/view/fireskills/skills%E6%8C%87%E4%BB%A4%E9%9B%86" rel="noopener noreferrer" target="_blank">
+<span class="material-icons-outlined text-base mr-1.5">library_books</span> AI 提示詞工具庫
+                                    <span class="material-icons-outlined text-sm ml-1 opacity-70">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+<!-- 右欄：提示詞區塊 -->
+<div class="absolute lg:relative inset-x-4 lg:inset-x-0 bottom-6 lg:bottom-0 top-auto lg:top-0 h-[380px] lg:h-auto flex flex-col z-20">
+<div class="prompt-box rounded-2xl p-5 md:p-6 border-t-8 border-t-google-blue flex flex-col h-full shadow-lg lg:shadow-sm bg-white">
+<h3 class="font-bold text-lg md:text-xl mb-3 flex items-center text-google-text shrink-0">
+<span class="material-icons-outlined mr-2 text-google-blue text-2xl">lightbulb</span> 實戰提示詞範例
+                            </h3>
+<div class="flex-grow min-h-0 overflow-y-auto scrollbar-thin bg-gray-50 border border-gray-100 p-4 rounded-xl relative">
+<p class="text-gray-800 font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap absolute inset-0 p-4" id="prompt-l1">根據【當前這個網頁】的內容，身為一位國小六年級的老師，我正在規劃一堂 40 分鐘的「媒體識讀與假新聞辨識」課程。請給我 3 個生動有趣的破冰活動提案。
+
+要求：
+1. 無需複雜的實體道具。
+2. 能引起小六學生的共鳴。
+3. 情境需結合時下流行的網路平台（如 YouTube、TikTok、IG）。</p>
+</div>
+<button class="mt-4 shrink-0 bg-google-blue hover:bg-blue-700 text-white w-full py-3 rounded-xl font-bold text-base flex items-center justify-center transition-all shadow-sm hover:shadow-md" onclick="copyToClipboard('prompt-l1')">
+<span class="material-icons-outlined mr-2 text-xl">content_copy</span> 一鍵複製提示詞
+                            </button>
+</div>
+</div>
+<!-- 行動版墊高空間 -->
+<div class="h-[400px] lg:hidden w-full shrink-0"></div>
+</div>
+</div>
+</div>
+<!-- ================= Slide 4: L2 Gems ================= -->
+<div class="slide absolute inset-0 overflow-y-auto bg-gray-50" id="slide-4">
+<div class="min-h-full w-full flex items-stretch justify-center py-6 px-4 md:px-8">
+<div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 relative">
+<div class="flex flex-col space-y-4">
+<div class="flex items-center mb-1">
+<div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-google-red mr-4 shadow-inner shrink-0">
+<span class="material-icons-outlined text-2xl">smart_toy</span>
+</div>
+<div>
+<h2 class="text-2xl md:text-3xl font-bold text-google-text">L2 模組層：Gems</h2>
+<p class="text-google-secondary text-sm md:text-base mt-0.5">封裝特定 Prompt 與知識庫的專屬教學助教。</p>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+<h3 class="text-lg font-bold text-google-text mb-1.5 flex items-center"><span class="material-icons-outlined text-google-red mr-2 text-xl">my_location</span> 應用情境</h3>
+<p class="text-sm md:text-base text-gray-700 leading-relaxed">固定格式的重複性產出。適合用來生成符合特定教學風格，或需嚴格遵循課綱格式的文件（如學習單產生器）。</p>
+</div>
+<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+<h3 class="text-lg font-bold text-google-text mb-2.5 flex items-center"><span class="material-icons-outlined text-google-red mr-2 text-xl">format_list_numbered</span> 操作步驟</h3>
+<ol class="list-decimal list-inside space-y-2 text-sm md:text-base text-gray-800 leading-relaxed">
+<li>在左側選單點擊「建立 Gem」。</li>
+<li>將右側的指令貼入「系統指令（System Instructions）」。</li>
+<li>未來只需輸入簡短關鍵字（如：<strong class="text-google-red">主題媒體識讀，小六</strong>）即可穩定產出。</li>
+</ol>
+</div>
+<div class="bg-red-50/70 rounded-2xl p-4 border border-red-100 mt-auto">
+<h4 class="text-sm font-bold text-red-900 mb-2.5 flex items-center">
+<span class="material-icons-outlined text-google-red mr-1.5 text-lg">science</span> 實戰展示資源
+                            </h4>
+<div class="flex flex-wrap gap-2">
+<a class="inline-flex items-center px-4 py-2 bg-white hover:bg-google-red hover:text-white text-google-red text-xs md:text-sm font-medium rounded-xl border border-red-200 transition-colors shadow-sm" href="https://gemini.google.com/gem/1ZPTjcGurju5-U2oRhyd-zbSAqyvMUpbj?usp=sharing" rel="noopener noreferrer" target="_blank">
+<span class="material-icons-outlined text-base mr-1.5">smart_toy</span> 點擊體驗：Gem 範例
+                                    <span class="material-icons-outlined text-sm ml-1 opacity-70">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+<div class="absolute lg:relative inset-x-4 lg:inset-x-0 bottom-6 lg:bottom-0 top-auto lg:top-0 h-[380px] lg:h-auto flex flex-col z-20">
+<div class="prompt-box rounded-2xl p-5 md:p-6 border-t-8 border-t-google-red flex flex-col h-full shadow-lg lg:shadow-sm bg-white">
+<h3 class="font-bold text-lg md:text-xl mb-3 flex items-center text-google-text shrink-0">
+<span class="material-icons-outlined mr-2 text-google-red text-2xl">settings</span> 系統指令 (System Instruction)
+                            </h3>
+<div class="flex-grow min-h-0 overflow-y-auto scrollbar-thin bg-gray-50 border border-gray-100 p-4 rounded-xl relative">
+<p class="text-gray-800 font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap absolute inset-0 p-4" id="prompt-l2">你是一位熟悉台灣 108 課綱的專業課程設計專家。
+
+當我輸入【學科、年級、單元主題】時，請自動執行：
+1. 產出一份「素養導向」的表現任務學習單（含情境、探究問題、任務）。
+2. 附帶一份包含「優、良、可、待加強」的評量規準（Rubrics）表。
+
+要求：保持專業、鼓勵，層次分明，使用繁體中文。若資訊不足請主動詢問。</p>
+</div>
+<button class="mt-4 shrink-0 bg-google-red hover:bg-red-700 text-white w-full py-3 rounded-xl font-bold text-base flex items-center justify-center transition-all shadow-sm hover:shadow-md" onclick="copyToClipboard('prompt-l2')">
+<span class="material-icons-outlined mr-2 text-xl">content_copy</span> 一鍵複製系統指令
+                            </button>
+</div>
+</div>
+<div class="h-[400px] lg:hidden w-full shrink-0"></div>
+</div>
+</div>
+</div>
+<!-- ================= Slide 5: L3 Skill ================= -->
+<div class="slide absolute inset-0 overflow-y-auto" id="slide-5">
+<div class="min-h-full w-full flex items-stretch justify-center py-6 px-4 md:px-8">
+<div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 relative">
+<div class="flex flex-col space-y-4">
+<div class="flex items-center mb-1">
+<div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-google-yellow mr-4 shadow-inner shrink-0">
+<span class="material-icons-outlined text-2xl">extension</span>
+</div>
+<div>
+<h2 class="text-2xl md:text-3xl font-bold text-google-text">L3 擴充層：Skill</h2>
+<p class="text-google-secondary text-sm md:text-base mt-0.5">具備邏輯判斷與程序步驟的結構化運算外掛。</p>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+<h3 class="text-lg font-bold text-google-text mb-1.5 flex items-center"><span class="material-icons-outlined text-google-yellow mr-2 text-xl">my_location</span> 應用情境</h3>
+<p class="text-sm md:text-base text-gray-700 leading-relaxed">當需要系統性展開教案、確保符合教育學理矩陣，或產出絕對無誤差的「雙向細目表」時，需借助 Skill 鎖定演算邏輯。</p>
+</div>
+<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+<h3 class="text-lg font-bold text-google-text mb-2.5 flex items-center"><span class="material-icons-outlined text-google-yellow mr-2 text-xl">format_list_numbered</span> 操作步驟</h3>
+<ol class="list-decimal list-inside space-y-2 text-sm md:text-base text-gray-800 leading-relaxed">
+<li>在對話環境輸入喚醒詞（如 <strong class="text-yellow-600">@指令</strong> 或 <strong class="text-yellow-600">/指令</strong>）。</li>
+<li>以「參數化（Key-Value）」方式給予條件。</li>
+<li>送出後，系統將在後台進行矩陣運算並精確輸出。</li>
+</ol>
+</div>
+<!-- 新增：可結合多個 Skill 區塊 -->
+<div class="bg-amber-100 rounded-2xl p-4 md:p-5 border border-amber-300 shadow-sm">
+<div class="font-bold text-amber-900 mb-2 flex items-center text-base md:text-lg">
+<span class="material-icons-outlined mr-2 text-amber-600 text-xl">mediation</span> 可結合多個Skill：
+                            </div>
+<p class="text-sm md:text-base text-amber-950 leading-relaxed font-medium">
+                                利用 <strong class="text-amber-800 bg-amber-200/60 px-1.5 py-0.5 rounded">@tw-spark-edu-lesson-plan</strong> 幫我設計"媒體識讀"一節課的課程教案 針對國小四年級並根據生成的課程教案 使用 <strong class="text-amber-800 bg-amber-200/60 px-1.5 py-0.5 rounded">@tw-spark-edu-rubric-designer</strong> 建立四級 Rubrics 評量表 並將這些內容利用 <strong class="text-amber-800 bg-amber-200/60 px-1.5 py-0.5 rounded">@interactive-website-generator</strong> 幫我製作成教學網站 我要蒙德里安風格 請將三份資料分別生成給我
+                            </p>
+</div>
+<!-- 新增：實戰展示資源連結區 -->
+<div class="bg-yellow-50/70 rounded-2xl p-4 border border-yellow-100 mt-auto">
+<h4 class="text-sm font-bold text-yellow-900 mb-2.5 flex items-center">
+<span class="material-icons-outlined text-google-yellow mr-1.5 text-lg">link</span> 實戰展示資源
+                            </h4>
+<div class="flex flex-wrap gap-2">
+<a class="inline-flex items-center px-3.5 py-2 bg-white hover:bg-yellow-500 hover:text-white text-yellow-600 text-xs md:text-sm font-medium rounded-xl border border-yellow-200 transition-colors shadow-sm" href="https://moodlela914.github.io/gemskills/" rel="noopener noreferrer" target="_blank">
+<span class="material-icons-outlined text-base mr-1.5">build</span> AI Skill 智慧開發工作台
+                                    <span class="material-icons-outlined text-sm ml-1 opacity-70">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+<div class="absolute lg:relative inset-x-4 lg:inset-x-0 bottom-6 lg:bottom-0 top-auto lg:top-0 h-[380px] lg:h-auto flex flex-col z-20">
+<div class="prompt-box rounded-2xl p-5 md:p-6 border-t-8 border-t-google-yellow flex flex-col h-full shadow-lg lg:shadow-sm bg-white">
+<h3 class="font-bold text-lg md:text-xl mb-3 flex items-center text-google-text shrink-0">
+<span class="material-icons-outlined mr-2 text-google-yellow text-2xl">terminal</span> 調用語法示範 (參數化)
+                            </h3>
+<div class="flex-grow min-h-0 overflow-y-auto scrollbar-thin bg-gray-50 border border-gray-100 p-4 rounded-xl relative">
+<p class="text-gray-800 font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap absolute inset-0 p-4" id="prompt-l3">@tw-spark-edu-lesson-plan
+請為我生成一份完整教案，參數設定如下：
+- 單元名稱：假新聞偵探團（媒體識讀）
+- 適用年級：國小六年級
+- 節數：1 節課（40 分鐘）
+- 核心素養：J-B2 科技資訊與媒體素養
+- 認知階層：強調布魯姆「分析」與「評鑑」層次
+- 輸出格式：包含「教學目標、雙向細目表、三階段教學活動（引起動機、發展活動、綜合活動）、時間分配」之結構化表格。</p>
+</div>
+<button class="mt-4 shrink-0 bg-google-yellow hover:bg-yellow-600 text-gray-900 w-full py-3 rounded-xl font-bold text-base flex items-center justify-center transition-all shadow-sm hover:shadow-md" onclick="copyToClipboard('prompt-l3')">
+<span class="material-icons-outlined mr-2 text-xl">content_copy</span> 一鍵複製調用語法
+                            </button>
+</div>
+</div>
+<div class="h-[400px] lg:hidden w-full shrink-0"></div>
+</div>
+</div>
+</div>
+<!-- ================= Slide 6: 深度解析 Gems vs Skill ================= -->
+<div class="slide absolute inset-0 overflow-y-auto bg-gray-50" id="slide-6">
+<div class="min-h-full w-full flex items-center justify-center py-6 px-4 md:px-8">
+<div class="max-w-6xl w-full">
+<div class="text-center mb-6">
+<span class="inline-block bg-blue-50 text-google-blue px-3.5 py-1 rounded-full text-xs md:text-sm font-bold mb-2">核心觀念釐清</span>
+<h2 class="text-2xl sm:text-3xl font-bold text-google-text">深度解析：Gems 與 Skill 的決定性差異</h2>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- 左欄：Gems -->
+<div class="bg-white rounded-2xl p-6 border-t-8 border-t-google-red shadow-sm flex flex-col">
+<div class="flex items-center mb-4">
+<div class="w-11 h-11 rounded-xl bg-red-50 text-google-red flex items-center justify-center mr-3 shrink-0">
+<span class="material-icons-outlined text-2xl">smart_toy</span>
+</div>
+<div>
+<h3 class="text-lg font-bold text-google-text">Gems (模組層)</h3>
+<span class="text-xs text-google-red font-semibold">自然語言機率生成 (Persona)</span>
+</div>
+</div>
+<p class="text-sm text-gray-600 mb-4 leading-relaxed">透過固定 System Prompt 與參考知識庫，賦予 AI 特定「人設」與「語氣偏好」。</p>
+<div class="space-y-3 mt-auto">
+<div class="bg-green-50/70 p-3 rounded-xl border border-green-100">
+<div class="font-bold text-green-800 text-xs mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1">thumb_up</span> 優點</div>
+<p class="text-xs md:text-sm text-gray-700 leading-relaxed">設定零門檻（純白話文）、回應具彈性與創意、適合發散與固定風格寫作。</p>
+</div>
+<div class="bg-red-50/70 p-3 rounded-xl border border-red-100">
+<div class="font-bold text-red-800 text-xs mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1">thumb_down</span> 缺點</div>
+<p class="text-xs md:text-sm text-gray-700 leading-relaxed">本質仍是機率預測，遇到複雜表格或嚴格字數/結構限制時，偶爾會「忘記規則」或跑版。</p>
+</div>
+</div>
+</div>
+<!-- 中欄：Skill -->
+<div class="bg-white rounded-2xl p-6 border-t-8 border-t-google-yellow shadow-sm flex flex-col">
+<div class="flex items-center mb-4">
+<div class="w-11 h-11 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center mr-3 shrink-0">
+<span class="material-icons-outlined text-2xl">extension</span>
+</div>
+<div>
+<h3 class="text-lg font-bold text-google-text">Skill (擴充層)</h3>
+<span class="text-xs text-yellow-600 font-semibold">程序化確定性執行 (Workflow)</span>
+</div>
+</div>
+<p class="text-sm text-gray-600 mb-4 leading-relaxed">將專業方法論封裝為結構化參數與步驟演算法，強制 AI 依序推理與檢核。</p>
+<div class="space-y-3 mt-auto">
+<div class="bg-green-50/70 p-3 rounded-xl border border-green-100">
+<div class="font-bold text-green-800 text-xs mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1">thumb_up</span> 優點</div>
+<p class="text-xs md:text-sm text-gray-700 leading-relaxed">輸出結構 100% 精準穩定、支援多 Skill 串聯調用（如：先寫教案→再建評量→最後轉網頁）。</p>
+</div>
+<div class="bg-red-50/70 p-3 rounded-xl border border-red-100">
+<div class="font-bold text-red-800 text-xs mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1">thumb_down</span> 缺點</div>
+<p class="text-xs md:text-sm text-gray-700 leading-relaxed">開發需具備結構化邏輯思維，調用時需提供明確參數。</p>
+</div>
+</div>
+</div>
+<!-- 右欄：使用時機結論 -->
+<div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-2xl p-6 shadow-md flex flex-col justify-between">
+<div>
+<div class="inline-flex items-center px-3 py-1 rounded-full bg-white/10 text-yellow-300 text-xs font-bold mb-4">
+<span class="material-icons-outlined text-sm mr-1">compass_calibration</span> 實戰決策指南
+                                </div>
+<h3 class="text-xl font-bold mb-4">老師該如何選擇？</h3>
+<div class="space-y-4 text-sm text-slate-200 leading-relaxed">
+<div class="bg-white/10 p-3.5 rounded-xl border border-white/10">
+<div class="font-bold text-red-300 mb-1">💡 選擇 Gems 當你需要：</div>
+                                        「一位懂你教學風格的聊天助教」。例如：潤飾給家長的聯絡簿文字、設計素養情境故事、日常單一題型出題。
+                                    </div>
+<div class="bg-white/10 p-3.5 rounded-xl border border-white/10">
+<div class="font-bold text-yellow-300 mb-1">⚙️ 選擇 Skill 當你需要：</div>
+                                        「嚴謹不苟的自動化教務工程師」。例如：產出 108 課綱雙向細目表、四級 Rubrics 矩陣、或跨模組生成互動教材網站。
+                                    </div>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-white/15 text-xs text-slate-300 flex items-center">
+<span class="material-icons-outlined text-base mr-1.5 text-google-blue">verified</span>
+                                兩者可搭配：在 Gem 中喚醒 Skill 執行精密任務！
+                            </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ================= Slide 7: L4 Spark (任務) ================= -->
+<div class="slide absolute inset-0 overflow-y-auto" id="slide-7">
+<div class="min-h-full w-full flex items-stretch justify-center py-6 px-4 md:px-8">
+<div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 relative">
+<div class="flex flex-col space-y-4">
+<div class="flex items-center mb-1">
+<div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-google-green mr-4 shadow-inner shrink-0">
+<span class="material-icons-outlined text-2xl">auto_awesome_motion</span>
+</div>
+<div>
+<h2 class="text-2xl md:text-3xl font-bold text-google-text">L4 生產層：Spark (任務)</h2>
+<p class="text-google-secondary text-sm md:text-base mt-0.5">跨越「對話文字」到「雲端實體檔案」的自動化生產引擎。</p>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+<h3 class="text-lg font-bold text-google-text mb-1.5 flex items-center"><span class="material-icons-outlined text-google-green mr-2 text-xl">my_location</span> 應用情境</h3>
+<p class="text-sm md:text-base text-gray-700 leading-relaxed">當教材文字已確認，需要一鍵轉換為排版好的 Google Docs 教案、Google Slides 簡報、知識結構圖與 Kahoot 題庫試算表，並自動歸檔至雲端硬碟時。</p>
+</div>
+<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+<h3 class="text-lg font-bold text-google-text mb-2.5 flex items-center"><span class="material-icons-outlined text-google-green mr-2 text-xl">format_list_numbered</span> 操作步驟</h3>
+<ol class="list-decimal list-inside space-y-2 text-sm md:text-base text-gray-800 leading-relaxed">
+<li>準備好單元課本 PDF 或核心教材文本。</li>
+<li>啟動 Spark (任務) 並掛載備課資源包生成 Skill。</li>
+<li>下達右側轉換指令，系統即自動在 Google Drive 建立專屬資料夾並產出全套實體教材檔案。</li>
+</ol>
+</div>
+<!-- 實戰展示資源連結區 -->
+<div class="bg-green-50/70 rounded-2xl p-4 border border-green-100 mt-auto">
+<h4 class="text-sm font-bold text-green-900 mb-2.5 flex items-center">
+<span class="material-icons-outlined text-google-green mr-1.5 text-lg">folder_zip</span> 實戰展示資源
+                            </h4>
+<div class="flex flex-wrap gap-2">
+<a class="inline-flex items-center px-4 py-2 bg-white hover:bg-google-green hover:text-white text-google-green text-xs md:text-sm font-medium rounded-xl border border-green-200 transition-colors shadow-sm" href="https://u1.padletusercontent.com/uploads/padlet-uploads-usc1/1736270122/df8935d96eef982d28dcd34543dd5999/tw_spark_edu_lesson_pack_generator.zip?token=CmQnuwyWG8F95j2HxLK6vcpBdwVLPvobVNn9casjurOyFUN2CG7-wwuZJwYiAk5q0hmvLQmGJZdwNMSmSaLSwAxPxdiOX9IsCyqLOqkbpIg4TGogB4ABf9fT-a3Ye26upLZ7Uj4UMfb7Qp4nSzHlSdoXaZQE0cPyXAiF0j3NlT9-bSricY5t7cQEUlSN2_LGzqivc3Ty8C2du365QyEECp1CxkRJJzphbNjzpp0G20vudnmPcLD2AB_Jji_QU4k4DhaAN0kO9W1qiOYd5ZLtV7OEVqUt_9wic5VSXe_aUxk=" rel="noopener noreferrer" target="_blank">
+<span class="material-icons-outlined text-base mr-1.5">download</span> 下載：備課資料生成 skill
+                                    <span class="material-icons-outlined text-sm ml-1 opacity-70">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+<div class="absolute lg:relative inset-x-4 lg:inset-x-0 bottom-6 lg:bottom-0 top-auto lg:top-0 h-[380px] lg:h-auto flex flex-col z-20">
+<div class="prompt-box rounded-2xl p-5 md:p-6 border-t-8 border-t-google-green flex flex-col h-full shadow-lg lg:shadow-sm bg-white">
+<h3 class="font-bold text-lg md:text-xl mb-3 flex items-center text-google-text shrink-0">
+<span class="material-icons-outlined mr-2 text-google-green text-2xl">slideshow</span> 轉換指令範例
+                            </h3>
+<div class="flex-grow min-h-0 overflow-y-auto scrollbar-thin bg-gray-50 border border-gray-100 p-4 rounded-xl relative flex items-center">
+<p class="text-gray-800 font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap absolute inset-0 p-4" id="prompt-l4">@tw-spark-edu-lesson-pack-generator 請依據我提供的這份課本 PDF（或單元內容），為本課生成全套備課資源包，並將生成的 Google 文件、Google 簡報、結構圖圖片與 Kahoot 試算表，自動建立並存入 Google Drive『備課資料夾』中的專屬單元資料夾內。</p>
+</div>
+<button class="mt-4 shrink-0 bg-google-green hover:bg-green-700 text-white w-full py-3 rounded-xl font-bold text-base flex items-center justify-center transition-all shadow-sm hover:shadow-md" onclick="copyToClipboard('prompt-l4')">
+<span class="material-icons-outlined mr-2 text-xl">content_copy</span> 一鍵複製轉換指令
+                            </button>
+</div>
+</div>
+<div class="h-[400px] lg:hidden w-full shrink-0"></div>
+</div>
+</div>
+</div>
+<!-- ================= Slide 8: L5 Workspace ================= -->
+<div class="slide absolute inset-0 overflow-y-auto bg-gray-50" id="slide-8">
+<div class="min-h-full w-full flex items-stretch justify-center py-6 px-4 md:px-8">
+<div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 relative">
+<div class="flex flex-col space-y-4">
+<div class="flex items-center mb-1">
+<div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-4 shadow-inner shrink-0">
+<span class="material-icons-outlined text-2xl">account_tree</span>
+</div>
+<div>
+<h2 class="text-2xl md:text-3xl font-bold text-google-text">L5 系統層：Workspace</h2>
+<p class="text-google-secondary text-sm md:text-base mt-0.5">觸發式與跨服務的教學行政整合中樞。</p>
+</div>
+</div>
+<!-- 系統限制提醒 (新增) -->
+<div class="bg-amber-50 rounded-2xl p-3 border border-amber-200 shadow-sm">
+<div class="flex items-start">
+<span class="material-icons-outlined text-amber-600 mr-2 text-lg">info</span>
+<p class="text-sm text-amber-800 font-bold leading-relaxed">
+                                    💡 每個帳號能夠建置 25 個工作流，每個工作流可以建置 20 個步驟。
+                                </p>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+<h3 class="text-lg font-bold text-google-text mb-1.5 flex items-center"><span class="material-icons-outlined text-purple-600 mr-2 text-xl">my_location</span> 應用情境</h3>
+<p class="text-sm text-gray-700 leading-relaxed">無人值守的工作流。如：學生繳表單 → AI 批改 → 寫入 Google Docs → 自動寄發回饋 Email。</p>
+</div>
+<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+<h3 class="text-lg font-bold text-google-text mb-2 flex items-center"><span class="material-icons-outlined text-purple-600 mr-2 text-xl">format_list_numbered</span> 邏輯設計步驟</h3>
+<div class="space-y-1.5 text-sm text-gray-800 leading-relaxed font-medium">
+<p>設定 Trigger：當指定 Google Form 被提交。</p>
+<p>Action 1：呼叫 Gemini API 分析簡答內容。</p>
+<p>Action 2：將評分內容寫入 Google Docs。</p>
+<p>Action 3：透過 Gmail 觸發派件給學生。</p>
+</div>
+</div>
+<div class="bg-purple-50/70 rounded-2xl p-4 border border-purple-100 mt-auto">
+<h4 class="text-sm font-bold text-purple-900 mb-2.5 flex items-center">
+<span class="material-icons-outlined text-purple-600 mr-1.5 text-lg">link</span> 實戰展示資源
+                            </h4>
+<div class="flex flex-col gap-2">
+<a class="inline-flex items-center w-full px-3.5 py-2 bg-white hover:bg-purple-600 hover:text-white text-purple-600 text-sm font-medium rounded-xl border border-purple-200 transition-colors shadow-sm" href="https://docs.google.com/forms/d/e/1FAIpQLSeXGEDD15aoSWfUuVnDVUYDAQT18z3Glyc0orc8nErMpiPvmA/viewform" rel="noopener noreferrer" target="_blank">
+<span class="material-icons-outlined text-base mr-1.5">assignment</span> AI 與媒體識讀小學堂
+                                    <span class="material-icons-outlined text-sm ml-auto opacity-70">open_in_new</span>
+</a>
+<a class="inline-flex items-center w-full px-3.5 py-2 bg-white hover:bg-purple-600 hover:text-white text-purple-600 text-sm font-medium rounded-xl border border-purple-200 transition-colors shadow-sm" href="https://docs.google.com/forms/d/e/1FAIpQLSeZiQxbILLUaVcp5YNn76YQANyocaM2n6pN9eeBRgpGIYclGA/viewform" rel="noopener noreferrer" target="_blank">
+<span class="material-icons-outlined text-base mr-1.5">cloud_upload</span> 國小學生作文上傳
+                                    <span class="material-icons-outlined text-sm ml-auto opacity-70">open_in_new</span>
+</a>
+<a class="inline-flex items-center w-full px-3.5 py-2 bg-white hover:bg-purple-600 hover:text-white text-purple-600 text-sm font-medium rounded-xl border border-purple-200 transition-colors shadow-sm" href="https://drive.google.com/file/d/1uDeNNTBMOU2ynpUBXBktfagf7w33i3dU/view?usp=sharing" rel="noopener noreferrer" target="_blank">
+<span class="material-icons-outlined text-base mr-1.5">article</span> 作文範例
+                                    <span class="material-icons-outlined text-sm ml-auto opacity-70">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+<div class="absolute lg:relative inset-x-4 lg:inset-x-0 bottom-6 lg:bottom-0 top-auto lg:top-0 h-[450px] lg:h-auto flex flex-col z-20">
+<div class="prompt-box rounded-2xl p-5 md:p-6 border-t-8 border-t-purple-500 flex flex-col h-full shadow-lg lg:shadow-sm bg-white">
+<h3 class="font-bold text-lg md:text-xl mb-3 flex items-center text-google-text shrink-0">
+<span class="material-icons-outlined mr-2 text-purple-500 text-2xl">code</span> 後台分析提示詞範例
+                            </h3>
+<div class="flex-grow min-h-0 overflow-y-auto scrollbar-thin bg-gray-50 border border-gray-100 p-4 rounded-xl relative">
+<p class="text-gray-800 font-mono text-sm leading-relaxed whitespace-pre-wrap absolute inset-0 p-4" id="prompt-l5">[角色任務]
+你現在是一位深耕教育評量與媒體識讀專業的「AI 閱卷評閱專家」。你的目標是針對學生的簡答題作答，提供客觀、精準且具教育啟發性的結構化評量。
+
+[背景資訊]
+學生剛完成以「AI與媒體識讀」為主題的簡答題測驗。我們需要透過五大核心向度來衡量學生的資訊素養與AI認知，以確保他們具備在數位時代辨識真偽的能力。
+
+[具體指令]
+請閱讀以下學生的作答內容，並嚴格依照下列五個向度（每個向度滿分20分，總計100分）進行計分與深度分析：
+1. 概念精確度（20分）：評估對AI術語與運作機制的理解正確性。
+2. 批判思辨力（20分）：評估分析AI生成內容潛在風險與偏見的能力。
+3. 實例佐證力（20分）：評估使用具體案例支持自身觀點的能力。
+4. 素養實踐力（20分）：評估提出的事實查核步驟或防範策略是否具體可行。
+5. 邏輯表達力（20分）：評估文意通順度與論述結構的嚴謹性。
+
+針對學生的作答，請產出以下回覆：
+- 【總分評定】：給出總分（/100）。
+- 【雷達圖分析】：列出五個向度的個別得分。
+- 【優勢與亮點】：具體點出作答中表現最優異的1至2個面向。
+- 【成長鷹架】：針對失分項目，提出具體且可操作的改善建議。
+
+[約束條件]
+1. 必須一律使用繁體中文與臺灣教育用語回覆。
+2. 分析結果請以「表格」與「條列式」呈現，確保版面易讀。
+3. 評語語氣須保持專業且溫暖，展現教育工作者的支持感。
+4. 嚴禁使用「總的來說」、「總而言之」等空洞的結尾用語。
+
+以下是學生的作答內容：
+（                                       )</p>
+</div>
+<button class="mt-4 shrink-0 bg-purple-600 hover:bg-purple-700 text-white w-full py-3 rounded-xl font-bold text-base flex items-center justify-center transition-all shadow-sm hover:shadow-md" onclick="copyToClipboard('prompt-l5')">
+<span class="material-icons-outlined mr-2 text-xl">content_copy</span> 一鍵複製分析邏輯
+                            </button>
+</div>
+</div>
+<div class="h-[480px] lg:hidden w-full shrink-0"></div>
+</div>
+</div>
+</div>
+<!-- ================= Slide 9: Spark (任務) vs Workspace Studio ================= -->
+<div class="slide absolute inset-0 overflow-y-auto bg-white" id="slide-9">
+<div class="min-h-full w-full flex items-center justify-center py-6 px-4 md:px-8">
+<div class="max-w-6xl w-full">
+<div class="text-center mb-6">
+<span class="inline-block bg-purple-50 text-purple-700 px-3.5 py-1 rounded-full text-xs md:text-sm font-bold mb-2">進階架構比較</span>
+<h2 class="text-2xl sm:text-3xl font-bold text-google-text">Spark (任務) 與 Workspace Studio 的根本差異</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+<div class="bg-green-50/40 rounded-2xl p-6 border-2 border-green-100 flex flex-col shadow-sm">
+<div class="flex items-center mb-4">
+<div class="w-11 h-11 rounded-xl bg-google-green text-white flex items-center justify-center mr-3 shadow-sm shrink-0">
+<span class="material-icons-outlined text-2xl">auto_awesome_motion</span>
+</div>
+<div>
+<h3 class="text-lg md:text-xl font-bold text-google-text">Google Spark (任務)</h3>
+<span class="text-xs md:text-sm text-green-700 font-semibold">L4 生產層：主動式單次產出引擎</span>
+</div>
+</div>
+<div class="space-y-3 text-sm text-gray-700">
+<div class="bg-white p-3.5 rounded-xl border border-green-100">
+<strong class="text-google-green block mb-0.5">⚡ 觸發方式：主動喚醒 (On-Demand)</strong>
+                                    教師備課時主動下達指令，屬於「即時互動式」執行。
+                                </div>
+<div class="bg-white p-3.5 rounded-xl border border-green-100">
+<strong class="text-google-green block mb-0.5">📦 核心目的：多模態教材打包</strong>
+                                    將單一來源擴充為成套教學檔案（Docs, Slides, Kahoot）並歸檔。
+                                </div>
+<div class="bg-white p-3.5 rounded-xl border border-green-100">
+<strong class="text-google-green block mb-0.5">🎯 適用階段：課前備課 (1 對多)</strong>
+                                    解決教師「做教材、排版、建資料夾」的繁瑣手工勞務。
+                                </div>
+</div>
+</div>
+<div class="bg-purple-50/40 rounded-2xl p-6 border-2 border-purple-100 flex flex-col shadow-sm">
+<div class="flex items-center mb-4">
+<div class="w-11 h-11 rounded-xl bg-purple-600 text-white flex items-center justify-center mr-3 shadow-sm shrink-0">
+<span class="material-icons-outlined text-2xl">account_tree</span>
+</div>
+<div>
+<h3 class="text-lg md:text-xl font-bold text-google-text">Workspace Studio</h3>
+<span class="text-xs md:text-sm text-purple-700 font-semibold">L5 系統層：被動式事件自動化</span>
+</div>
+</div>
+<div class="space-y-3 text-sm text-gray-700">
+<div class="bg-white p-3.5 rounded-xl border border-purple-100">
+<strong class="text-purple-600 block mb-0.5">🔄 觸發方式：事件觸發 (Event-Driven)</strong>
+                                    設定規則後在後台待命（如表單提交），24 小時全自動運作。
+                                </div>
+<div class="bg-white p-3.5 rounded-xl border border-purple-100">
+<strong class="text-purple-600 block mb-0.5">🔗 核心目的：資料流轉與派發</strong>
+                                    串聯不同工具的流水線（收件 → AI批改 → 寫紀錄 → 寄信通知）。
+                                </div>
+<div class="bg-white p-3.5 rounded-xl border border-purple-100">
+<strong class="text-purple-600 block mb-0.5">🎯 適用階段：課中與課後 (多對多)</strong>
+                                    解決教師「重複收發作業、逐一批改、個別寄信」的行政負擔。
+                                </div>
+</div>
+</div>
+</div>
+<div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+<div class="flex items-center">
+<span class="material-icons-outlined text-3xl text-yellow-400 mr-3.5 shrink-0">bolt</span>
+<p class="text-sm md:text-base leading-relaxed">
+<strong>總結：</strong> <span class="text-green-300 font-semibold">Spark</span> 是幫老師把教材「生出來」的<strong>備課兵工廠</strong>；<span class="text-purple-300 font-semibold">Workspace</span> 則是把作業「改完發回去」的<strong>自動流水線</strong>！
+                            </p>
+</div>
+<a class="shrink-0 bg-google-blue hover:bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm inline-flex items-center transition-all shadow-md" href="https://moodlela914.github.io/sparkstudio" rel="noopener noreferrer" target="_blank">
+<span class="material-icons-outlined text-lg mr-1.5">rocket_launch</span> Google AI 雙引擎
+                            <span class="material-icons-outlined text-sm ml-1">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<!-- ================= Slide 10: 結語 ================= -->
+<div class="slide absolute inset-0 overflow-y-auto bg-google-blue text-white" id="slide-10">
+<div class="min-h-full w-full flex items-center justify-center py-8 px-4">
+<div class="max-w-4xl text-center">
+<div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
+<span class="material-icons-outlined text-4xl">flag</span>
+</div>
+<h2 class="text-3xl sm:text-5xl font-bold mb-6 leading-tight">AI 是教學的擴增器，<br/>不是取代者。</h2>
+<p class="text-base sm:text-xl md:text-2xl text-blue-50 mb-10 leading-relaxed font-light max-w-2xl mx-auto">
+                        從靈感發想到系統自動化，選擇合適層級的工具，<br/>把重複繁雜的工作交給 AI，把最珍貴的「溫度與關懷」留給學生。
+                    </p>
+<div class="flex justify-center space-x-4">
+<button class="bg-white text-google-blue hover:bg-gray-100 px-8 py-3.5 rounded-full font-bold text-lg shadow-lg transition-colors inline-flex items-center" onclick="goToSlide(0)">
+<span class="material-icons-outlined mr-2">replay</span> 回到首頁
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- 底部控制列 -->
+<footer class="shrink-0 relative w-full bg-white border-t border-gray-200 z-50 h-16 flex items-center justify-between px-4 md:px-8 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.03)]">
+<button class="flex items-center text-google-secondary hover:text-google-blue transition-colors font-medium text-sm md:text-base px-3 md:px-5 py-2 rounded-xl hover:bg-gray-50" onclick="prevSlide()">
+<span class="material-icons-outlined mr-1">chevron_left</span> 上一頁
+        </button>
+<div class="text-xs md:text-sm text-gray-400 font-mono hidden sm:block">
+            使用鍵盤 <kbd class="bg-gray-100 border border-gray-300 px-2 py-1 rounded mx-1 text-gray-600">←</kbd> <kbd class="bg-gray-100 border border-gray-300 px-2 py-1 rounded mx-1 text-gray-600">→</kbd> 快速切換
+        </div>
+<button class="flex items-center text-google-blue hover:text-blue-800 transition-colors font-medium text-sm md:text-base px-3 md:px-5 py-2 rounded-xl hover:bg-blue-50" onclick="nextSlide()">
+            下一頁 <span class="material-icons-outlined ml-1">chevron_right</span>
+</button>
+</footer>
+<!-- Toast 提示容器 -->
+<div class="toast fixed top-20 left-1/2 transform -translate-x-1/2 z-[60] bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl font-medium text-sm md:text-base flex items-center pointer-events-none" id="toast">
+<span class="material-icons-outlined mr-2 text-green-400 text-xl">check_circle</span>
+<span id="toast-message">複製成功！</span>
+</div>
+<script>
+        const slides = document.querySelectorAll('.slide');
+        const slideCounter = document.getElementById('slide-counter');
+        const progressBar = document.getElementById('progress-bar');
+        const totalSlides = slides.length;
+        let currentSlideIndex = 0;
+
+        // 初始化
+        updateUI();
+
+        // 切換到指定 Slide
+        function goToSlide(index) {
+            if (index < 0 || index >= totalSlides) return;
+            
+            slides[currentSlideIndex].classList.remove('active');
+            currentSlideIndex = index;
+            slides[currentSlideIndex].classList.add('active');
+            
+            updateUI();
+            slides[currentSlideIndex].scrollTop = 0;
+        }
+
+        function nextSlide() {
+            if (currentSlideIndex < totalSlides - 1) {
+                goToSlide(currentSlideIndex + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlideIndex > 0) {
+                goToSlide(currentSlideIndex - 1);
+            }
+        }
+
+        function updateUI() {
+            slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+            const progress = ((currentSlideIndex + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        // 鍵盤導航
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // 點擊邊緣導航 (排除按鈕、連結與文字內部滾動區)
+        document.getElementById('presentation-container').addEventListener('click', (e) => {
+            if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.overflow-y-auto')) return;
+
+            const clickX = e.clientX;
+            const screenWidth = window.innerWidth;
+            
+            if (clickX < screenWidth * 0.12) { 
+                prevSlide();
+            } else if (clickX > screenWidth * 0.88) { 
+                nextSlide();
+            }
+        });
+
+        // 複製到剪貼簿功能
+        function copyToClipboard(elementId) {
+            const textToCopy = document.getElementById(elementId).innerText;
+            fallbackCopyTextToClipboard(textToCopy);
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if(successful) {
+                    showToast('提示詞已複製！您現在可以貼上至對應的工具中。');
+                } else if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast('提示詞已複製！您現在可以貼上至對應的工具中。');
+                    });
+                }
+            } catch (err) {
+                showToast('複製失敗，請手動圈選複製。', true);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // 顯示 Toast 動態提示
+        let toastTimeout;
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const icon = toast.querySelector('.material-icons-outlined');
+            
+            toastMsg.textContent = message;
+            
+            if (isError) {
+                icon.textContent = 'error_outline';
+                icon.className = 'material-icons-outlined mr-2 text-red-400 text-xl';
+            } else {
+                icon.textContent = 'check_circle';
+                icon.className = 'material-icons-outlined mr-2 text-green-400 text-xl';
+            }
+
+            toast.classList.add('show');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+
+</body></html>
